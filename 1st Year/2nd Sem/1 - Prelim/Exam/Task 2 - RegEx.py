@@ -1,230 +1,302 @@
+import re
+from collections import Counter
+import urllib.request
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import ttk, scrolledtext, filedialog, messagebox
+import threading
 
-class Book:
-    def __init__(self, title, author, isbn, is_available=True):
-        self._title = title
-        self._author = author
-        self._isbn = isbn
-        self._is_available = is_available
-    
-    def get_title(self): return self._title
-    def get_author(self): return self._author
-    def get_isbn(self): return self._isbn
-    def is_available(self): return self._is_available
-    def set_available(self, status): self._is_available = status
-
-class Library:
-    def __init__(self):
-        self._books = []
-        self.load_sample_books()
-    
-    def load_sample_books(self):
-        # Fixed syntax errors from source (missing commas)
-        sample_books = [
-            ("Python Crash Course", "Rommel Robert Florido", "978-1593279288"),
-            ("Clean Code", "Lanz Isaac Olaes", "978-0132350884"),
-            ("The Pragmatic Programmer", "Ernesto Lucas Mateo", "978-0201616224"),
-            ("Head First Design Patterns", "Steven Wayne Chua", "978-0596007126"),
-            ("Automate the Boring Stuff", "Pete Andre Ron Borromeo", "978-1593275990"),
-            ("Introduction to Algorithms", "Nadine Endrenal", "978-0262033848"),
-            ("Grokking Algorithms", "Charish Aiwyne De Ocampo", "978-1617292231"),
-            ("Fluent Python", "Sean Kavin Fermo", "978-1492056348"),
-            ("Data Algorithms", "Brian Miguel Rabe", "978-1516487521"),
-            ("Fluent Python", "Aldryn Untalan", "978-1234567890")
-        ]
-        for title, author, isbn in sample_books:
-            self._books.append(Book(title, author, isbn))
-
-    def get_books(self):
-        return self._books
-
-    def add_book(self, book):
-        self._books.append(book)
-
-    def toggle_status(self, isbn):
-        for book in self._books:
-            if book.get_isbn() == isbn:
-                book.set_available(not book.is_available())
-                return True
-        return False
-
-class LibraryGUI:
+class SocialMediaAnalyzer:
     def __init__(self, root):
         self.root = root
-        self.root.title("Enverga University - Library Manager")
-        self.root.state('zoomed')
-        self.root.configure(bg="#f4f4f7")
+        self.root.title("Social Media Metrics Analyzer")
+        self.root.geometry("900x700")
+        self.root.configure(bg='#f0f0f0')
         
-        self.library = Library()
-        self.style = ttk.Style()
-        self.setup_styles()
+        # Create main container
+        self.create_widgets()
         
-        # --- SCROLLABLE CONTAINER ---
-        self.main_canvas = tk.Canvas(self.root, bg="#f4f4f7", highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(self.root, orient="vertical", command=self.main_canvas.yview)
-        self.scrollable_frame = tk.Frame(self.main_canvas, bg="#f4f4f7")
-
-        self.scrollable_frame.bind(
-            "<Configure>", 
-            lambda e: self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
-        )
-        self.canvas_window = self.main_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        self.main_canvas.bind('<Configure>', self._on_canvas_configure)
+    def create_widgets(self):
+        # Title
+        title_frame = tk.Frame(self.root, bg='#2c3e50', height=60)
+        title_frame.pack(fill='x')
+        title_frame.pack_propagate(False)
         
-        self.root.bind_all("<MouseWheel>", self._on_mousewheel)
-        self.root.bind_all("<Button-4>", self._on_mousewheel)
-        self.root.bind_all("<Button-5>", self._on_mousewheel)
-
-        self.main_canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="right", fill="y")
-        self.main_canvas.pack(side="left", fill="both", expand=True)
-
-        self.setup_ui()
-        self.refresh_list()
-
-    def _on_mousewheel(self, event):
-        if event.num == 4 or (hasattr(event, 'delta') and event.delta > 0):
-            self.main_canvas.yview_scroll(-1, "units")
-        elif event.num == 5 or (hasattr(event, 'delta') and event.delta < 0):
-            self.main_canvas.yview_scroll(1, "units")
-
-    def _on_canvas_configure(self, event):
-        self.main_canvas.itemconfig(self.canvas_window, width=event.width)
-
-    def setup_styles(self):
-        self.style.theme_use('clam')
-        self.style.configure("Treeview", background="white", fieldbackground="white", 
-                             rowheight=50, font=("Segoe UI", 11), borderwidth=0)
-        self.style.configure("Treeview.Heading", font=("Segoe UI Bold", 11), 
-                             background="#800000", foreground="white", relief="flat")
-        self.style.map("Treeview.Heading", background=[('active', '#660000')])
-        self.style.map("Treeview", background=[('selected', '#f2d7d7')], 
-                       foreground=[('selected', '#800000')])
+        title_label = tk.Label(title_frame, text="📊 Social Media Metrics Analyzer", 
+                              font=('Arial', 18, 'bold'), fg='white', bg='#2c3e50')
+        title_label.pack(pady=15)
         
-        self.style.configure("Primary.TButton", font=("Segoe UI Bold", 10), background="#800000", foreground="white", padding=8, width=20)
-        self.style.configure("Secondary.TButton", font=("Segoe UI Semibold", 10), background="#e9ecef", foreground="#333", padding=8, width=20)
-        self.style.configure("Danger.TButton", font=("Segoe UI Bold", 10), background="#fdf2f2", foreground="#c92a2a", padding=8, width=18)
-
-    def setup_ui(self):
-        # MAIN HEADER
-        header = tk.Frame(self.scrollable_frame, bg="#800000", height=130)
-        header.pack(fill="x")
-        tk.Label(header, text="UNIVERSITY LIBRARY SYSTEM", bg="#800000", fg="white", 
-                 font=("Segoe UI Bold", 32)).pack(pady=(30, 5))
-        tk.Label(header, text="Library Management Portal", bg="#800000", fg="#ffcccc", 
-                 font=("Segoe UI", 12, "italic")).pack(pady=(0, 30))
-
-        content = tk.Frame(self.scrollable_frame, bg="#f4f4f7")
-        content.pack(fill="both", expand=True, padx=100, pady=30)
-
-        # --- COMPACT INPUT CARD ---
-        input_card = tk.Frame(content, bg="white", highlightbackground="#ced4da", highlightthickness=1)
-        input_card.pack(fill="x", pady=(0, 30))
-
-        # Maroon Header for the Card 
-        input_header = tk.Frame(input_card, bg="#800000")
-        input_header.pack(fill="x")
-        tk.Label(input_header, text="ADD NEW RECORD", bg="#800000", fg="white",
-                 font=("Segoe UI Bold", 11)).pack(pady=10) # White text 
-
-        # Body of the Card [cite: 15]
-        input_body = tk.Frame(input_card, bg="white", padx=40, pady=20)
-        input_body.pack(fill="x")
-        input_body.grid_columnconfigure((0, 1, 2), weight=1)
-
-        fields = [("Book Title", "title"), ("Author Name", "author"), ("ISBN Code", "isbn")]
-        self.entries = {}
-        for i, (label_text, key) in enumerate(fields):
-            container = tk.Frame(input_body, bg="white")
-            container.grid(row=0, column=i, padx=15, pady=5)
-            
-            tk.Label(container, text=label_text.upper(), bg="white", 
-                     font=("Segoe UI Bold", 8), fg="#adb5bd").pack(anchor="center")
-            
-            entry = ttk.Entry(container, width=30) # Slightly shorter for compactness [cite: 17]
-            entry.pack(pady=(5, 0), ipady=3)
-            self.entries[key] = entry
-
-        # Button Container
-        btn_container = tk.Frame(input_body, bg="white")
-        btn_container.grid(row=1, column=0, columnspan=3, pady=(25, 5), sticky="ew")
+        # Input Section
+        input_frame = tk.LabelFrame(self.root, text="Data Source", 
+                                   font=('Arial', 11, 'bold'), 
+                                   bg='#f0f0f0', padx=10, pady=10)
+        input_frame.pack(fill='x', padx=20, pady=10)
         
-        actions_frame = tk.Frame(btn_container, bg="white")
-        actions_frame.pack(side="left")
-        ttk.Button(actions_frame, text="ADD TO COLLECTION", style="Primary.TButton", command=self.add_book).pack(side="left", padx=(0, 10))
-        ttk.Button(actions_frame, text="CHANGE STATUS", style="Secondary.TButton", command=self.toggle_status).pack(side="left", padx=10)
-        ttk.Button(btn_container, text="WIPE DATABASE", style="Danger.TButton", command=self.clear_all).pack(side="right")
-
-        # --- TABLE CARD ---
-        table_card = tk.Frame(content, bg="white", padx=30, pady=25,
-                              highlightbackground="#ced4da", highlightthickness=1)
-        table_card.pack(fill="both", expand=True)
-
-        search_frame = tk.Frame(table_card, bg="white")
-        search_frame.pack(fill="x", pady=(0, 20))
-        tk.Label(search_frame, text="FILTER BY ISBN:", bg="white", font=("Segoe UI Bold", 9), fg="#495057").pack(side="left", padx=(0, 10))
-        self.search_entry = ttk.Entry(search_frame, width=40)
-        self.search_entry.pack(side="left", ipady=2)
-        self.search_entry.bind("<KeyRelease>", lambda e: self.refresh_list())
-
-        columns = ("title", "author", "isbn", "status")
-        self.tree = ttk.Treeview(table_card, columns=columns, show="headings", height=15)
+        # Radio buttons for source type
+        self.source_type = tk.StringVar(value="url")
         
-        for col in columns:
-            self.tree.heading(col, text=col.upper())
+        radio_frame = tk.Frame(input_frame, bg='#f0f0f0')
+        radio_frame.pack(fill='x', pady=5)
         
-        # Alignment logic
-        self.tree.column("title", width=400, anchor="w")
-        self.tree.column("author", width=250, anchor="w")
-        self.tree.column("isbn", width=180, anchor="center")
-        self.tree.column("status", width=180, anchor="center")
-
-        self.tree.tag_configure('available', foreground='#2f9e44', font=("Segoe UI Semibold", 11))
-        self.tree.tag_configure('checkedout', foreground='#e03131', font=("Segoe UI Semibold", 11))
-        self.tree.tag_configure('even', background='#fcfcfc')
-
-        self.tree.pack(side="left", fill="both", expand=True)
-        list_sb = ttk.Scrollbar(table_card, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=list_sb.set)
-        list_sb.pack(side="right", fill="y")
-
-    def refresh_list(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        query = self.search_entry.get().lower()
-        for i, book in enumerate(self.library.get_books()):
-            if query in book.get_isbn().lower():
-                status = "●  Available" if book.is_available() else "○  Checked Out"
-                tag = 'available' if book.is_available() else 'checkedout'
-                row_tag = (tag, 'even' if i % 2 == 0 else 'odd')
-                self.tree.insert("", "end", values=(book.get_title(), book.get_author(), 
-                                                   book.get_isbn(), status), tags=row_tag)
-
-    def add_book(self):
-        t, a, i = self.entries['title'].get(), self.entries['author'].get(), self.entries['isbn'].get()
-        if t and a and i:
-            self.library.add_book(Book(t, a, i))
-            for e in self.entries.values():
-                e.delete(0, tk.END)
-            self.refresh_list()
+        tk.Radiobutton(radio_frame, text="URL", variable=self.source_type, 
+                      value="url", font=('Arial', 10), bg='#f0f0f0',
+                      command=self.toggle_source_type).pack(side='left', padx=10)
+        
+        tk.Radiobutton(radio_frame, text="Local File", variable=self.source_type, 
+                      value="file", font=('Arial', 10), bg='#f0f0f0',
+                      command=self.toggle_source_type).pack(side='left', padx=10)
+        
+        # Entry and buttons
+        entry_frame = tk.Frame(input_frame, bg='#f0f0f0')
+        entry_frame.pack(fill='x', pady=5)
+        
+        self.source_entry = tk.Entry(entry_frame, font=('Arial', 10), width=60)
+        self.source_entry.pack(side='left', padx=5, ipady=5)
+        self.source_entry.insert(0, "https://www.gutenberg.org/files/1342/1342-0.txt")
+        
+        self.browse_btn = tk.Button(entry_frame, text="Browse", 
+                                    command=self.browse_file,
+                                    font=('Arial', 9), state='disabled',
+                                    bg='#95a5a6', fg='white', padx=10)
+        self.browse_btn.pack(side='left', padx=5)
+        
+        # Analyze button
+        self.analyze_btn = tk.Button(input_frame, text="🔍 Analyze Data", 
+                                    command=self.start_analysis,
+                                    font=('Arial', 11, 'bold'),
+                                    bg='#27ae60', fg='white', 
+                                    padx=20, pady=8, cursor='hand2')
+        self.analyze_btn.pack(pady=10)
+        
+        # Progress bar
+        self.progress = ttk.Progressbar(input_frame, mode='indeterminate', length=400)
+        self.progress.pack(pady=5)
+        
+        # Results Section
+        results_frame = tk.LabelFrame(self.root, text="Analysis Results", 
+                                     font=('Arial', 11, 'bold'),
+                                     bg='#f0f0f0', padx=10, pady=10)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=10)
+        
+        # Results text area with scrollbar
+        self.results_text = scrolledtext.ScrolledText(results_frame, 
+                                                     font=('Courier', 10),
+                                                     wrap=tk.WORD,
+                                                     bg='#ffffff',
+                                                     fg='#2c3e50')
+        self.results_text.pack(fill='both', expand=True)
+        
+        # Status bar
+        self.status_bar = tk.Label(self.root, text="Ready", 
+                                  font=('Arial', 9), 
+                                  bg='#34495e', fg='white',
+                                  anchor='w', padx=10)
+        self.status_bar.pack(side='bottom', fill='x')
+        
+    def toggle_source_type(self):
+        """Toggle between URL and file input"""
+        if self.source_type.get() == "file":
+            self.browse_btn.config(state='normal', bg='#3498db')
+            self.source_entry.delete(0, tk.END)
+            self.source_entry.insert(0, "Click Browse to select a file...")
         else:
-            messagebox.showwarning("Incomplete", "Please fill all fields.")
-
-    def toggle_status(self):
-        selected = self.tree.focus()
-        if not selected:
+            self.browse_btn.config(state='disabled', bg='#95a5a6')
+            self.source_entry.delete(0, tk.END)
+            self.source_entry.insert(0, "https://www.gutenberg.org/files/1342/1342-0.txt")
+    
+    def browse_file(self):
+        """Open file dialog to select a file"""
+        filename = filedialog.askopenfilename(
+            title="Select a text file",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+        )
+        if filename:
+            self.source_entry.delete(0, tk.END)
+            self.source_entry.insert(0, filename)
+    
+    def start_analysis(self):
+        """Start analysis in a separate thread"""
+        source = self.source_entry.get().strip()
+        
+        if not source:
+            messagebox.showerror("Error", "Please enter a URL or select a file!")
             return
-        isbn = self.tree.item(selected)['values'][2]
-        self.library.toggle_status(isbn)
-        self.refresh_list()
+        
+        # Disable button and start progress bar
+        self.analyze_btn.config(state='disabled')
+        self.progress.start(10)
+        self.status_bar.config(text="Analyzing data...")
+        self.results_text.delete(1.0, tk.END)
+        
+        # Run analysis in separate thread to keep UI responsive
+        thread = threading.Thread(target=self.analyze_data, args=(source,))
+        thread.daemon = True
+        thread.start()
+    
+    def analyze_data(self, source):
+        """Perform the actual analysis"""
+        try:
+            # Read data
+            if self.source_type.get() == "url":
+                content = self.read_from_url(source)
+            else:
+                content = self.read_from_file(source)
+            
+            if not content:
+                self.display_error("Failed to load data from source.")
+                return
+            
+            # Perform analysis
+            results = self.perform_analysis(content)
+            
+            # Display results
+            self.display_results(results)
+            
+        except Exception as e:
+            self.display_error(f"Error during analysis: {str(e)}")
+        
+        finally:
+            # Re-enable button and stop progress bar
+            self.root.after(0, self.finish_analysis)
+    
+    def finish_analysis(self):
+        """Clean up after analysis"""
+        self.analyze_btn.config(state='normal')
+        self.progress.stop()
+        self.status_bar.config(text="Analysis complete!")
+    
+    def read_from_url(self, url):
+        """Fetch content from URL"""
+        try:
+            with urllib.request.urlopen(url, timeout=15) as response:
+                return response.read().decode('utf-8')
+        except Exception as e:
+            raise Exception(f"Failed to fetch URL: {str(e)}")
+    
+    def read_from_file(self, filename):
+        """Read content from file"""
+        try:
+            with open(filename, 'r', encoding='utf-8') as file:
+                return file.read()
+        except Exception as e:
+            raise Exception(f"Failed to read file: {str(e)}")
+    
+    def perform_analysis(self, content):
+        """Analyze the content using regex"""
+        # Extract patterns
+        hashtags = re.findall(r'#\w+', content, re.IGNORECASE)
+        mentions = re.findall(r'@\w+', content, re.IGNORECASE)
+        urls = re.findall(r'https?://[^\s]+', content)
+        posts = [post.strip() for post in content.split('\n') if post.strip()]
+        
+        # Analyze
+        results = {
+            'hashtags': {
+                'total': len(hashtags),
+                'unique': len(set(hashtags)),
+                'top': Counter(hashtags).most_common(5) if hashtags else []
+            },
+            'mentions': {
+                'total': len(mentions),
+                'unique': len(set(mentions)),
+                'top': Counter(mentions).most_common(5) if mentions else []
+            },
+            'urls': {
+                'total': len(urls),
+                'posts_with_urls': sum(1 for post in posts if re.search(r'https?://', post))
+            },
+            'posts': {
+                'total': len(posts),
+                'avg_length': sum(len(post) for post in posts) / len(posts) if posts else 0,
+                'min_length': min(len(post) for post in posts) if posts else 0,
+                'max_length': max(len(post) for post in posts) if posts else 0,
+                'with_questions': len([p for p in posts if re.search(r'\?', p)]),
+                'with_numbers': len([p for p in posts if re.search(r'\d+', p)])
+            }
+        }
+        
+        # Calculate averages
+        if results['posts']['total'] > 0:
+            results['avg_hashtags_per_post'] = results['hashtags']['total'] / results['posts']['total']
+            results['avg_mentions_per_post'] = results['mentions']['total'] / results['posts']['total']
+        else:
+            results['avg_hashtags_per_post'] = 0
+            results['avg_mentions_per_post'] = 0
+        
+        return results
+    
+    def display_results(self, results):
+        """Display results in the text area"""
+        output = []
+        output.append("=" * 70)
+        output.append("ANALYSIS RESULTS")
+        output.append("=" * 70)
+        output.append("")
+        
+        # Hashtag Analysis
+        output.append("📌 HASHTAG ANALYSIS")
+        output.append("-" * 70)
+        output.append(f"Total hashtags found: {results['hashtags']['total']}")
+        output.append(f"Unique hashtags: {results['hashtags']['unique']}")
+        
+        if results['hashtags']['top']:
+            output.append("\nTop 5 Most Popular Hashtags:")
+            for i, (tag, count) in enumerate(results['hashtags']['top'], 1):
+                output.append(f"  {i}. {tag}: {count} times")
+        output.append("")
+        
+        # Mentions Analysis
+        output.append("👤 MENTIONS ANALYSIS")
+        output.append("-" * 70)
+        output.append(f"Total mentions found: {results['mentions']['total']}")
+        output.append(f"Unique users mentioned: {results['mentions']['unique']}")
+        
+        if results['mentions']['top']:
+            output.append("\nTop 5 Most Mentioned Users:")
+            for i, (user, count) in enumerate(results['mentions']['top'], 1):
+                output.append(f"  {i}. {user}: {count} times")
+        output.append("")
+        
+        # URL Analysis
+        output.append("🔗 URL ANALYSIS")
+        output.append("-" * 70)
+        output.append(f"Total URLs found: {results['urls']['total']}")
+        output.append(f"Posts with URLs: {results['urls']['posts_with_urls']}")
+        output.append("")
+        
+        # Post Statistics
+        output.append("📝 POST STATISTICS")
+        output.append("-" * 70)
+        output.append(f"Total posts analyzed: {results['posts']['total']}")
+        output.append(f"Average post length: {results['posts']['avg_length']:.2f} characters")
+        output.append(f"Shortest post: {results['posts']['min_length']} characters")
+        output.append(f"Longest post: {results['posts']['max_length']} characters")
+        output.append(f"\nAverage hashtags per post: {results['avg_hashtags_per_post']:.2f}")
+        output.append(f"Average mentions per post: {results['avg_mentions_per_post']:.2f}")
+        output.append("")
+        
+        # Pattern Search
+        output.append("🔍 PATTERN SEARCH")
+        output.append("-" * 70)
+        output.append(f"Posts with questions: {results['posts']['with_questions']}")
+        output.append(f"Posts containing numbers: {results['posts']['with_numbers']}")
+        output.append("")
+        
+        output.append("=" * 70)
+        output.append("✅ ANALYSIS COMPLETE!")
+        output.append("=" * 70)
+        
+        # Update UI in main thread
+        self.root.after(0, lambda: self.results_text.insert(1.0, '\n'.join(output)))
+    
+    def display_error(self, message):
+        """Display error message"""
+        self.root.after(0, lambda: messagebox.showerror("Error", message))
+        self.root.after(0, lambda: self.status_bar.config(text="Error occurred"))
 
-    def clear_all(self):
-        if messagebox.askyesno("Confirm", "Wipe all library data?"):
-            self.library._books.clear()
-            self.refresh_list()
+def main():
+    root = tk.Tk()
+    app = SocialMediaAnalyzer(root)
+    root.mainloop()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = LibraryGUI(root)
-    root.mainloop()
+    main()
