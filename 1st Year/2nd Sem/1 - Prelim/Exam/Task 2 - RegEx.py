@@ -1,154 +1,146 @@
 import re
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from collections import Counter
 import random
 import itertools
+import threading
+import time
 
 class LeadApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Text File Generator & Data Analyzer")
         self.root.state('zoomed') 
-        # DARK MODE COLORS
-        self.bg_dark = "#1e1e2e"      # Deep Navy/Charcoal
-        self.fg_light = "#cdd6f4"     # Soft White
-        self.accent_dark = "#181825"  # Darker contrast
-        self.border_col = "#45475a"   # Muted slate border
         
-        self.root.configure(bg=self.bg_dark)
+        # LIGHT MODE COLORS
+        self.bg_main = "#f0f2f5"      # Light grey background
+        self.bg_card = "#ffffff"      # Pure white for containers
+        self.fg_text = "#2c3e50"      # Dark slate for text
+        self.border_col = "#dcdde1"   # Light border
+        self.blue = "#3498db"         # Soft blue accent
+        self.green = "#2ecc71"        # Emerald green accent
+        
+        self.root.configure(bg=self.bg_main)
 
-        # --- SHARED HEADER ---
-        header = tk.Frame(root, bg="#11111b", pady=25)
+        # --- HEADER ---
+        header = tk.Frame(root, bg="#2c3e50", pady=20)
         header.pack(fill="x")
         tk.Label(header, text="TEXT FILE GENERATOR & DATA ANALYZER", 
-                 font=('Segoe UI Bold', 22), bg="#11111b", fg="#89b4fa").pack()
+                 font=('Segoe UI Bold', 22), bg="#2c3e50", fg="white").pack()
 
-        # --- SCROLLABLE CONTAINER ---
-        self.main_container = tk.Frame(root, bg=self.bg_dark)
-        self.main_container.pack(fill="both", expand=True)
-
-        self.canvas = tk.Canvas(self.main_container, bg=self.bg_dark, highlightthickness=0)
-        self.scrollbar = tk.Scrollbar(self.main_container, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas, bg=self.bg_dark)
-
-        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-        
-        self.canvas.bind('<Configure>', self._on_canvas_configure)
-        self.root.bind_all("<MouseWheel>", lambda e: self.canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
-
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-
+        self.setup_scrollable_frames()
         self.setup_generator_ui()
         self.setup_auditor_ui()
 
-    def _on_canvas_configure(self, event):
-        self.canvas.itemconfig(self.canvas_window, width=event.width)
+    def setup_scrollable_frames(self):
+        self.canvas = tk.Canvas(self.root, bg=self.bg_main, highlightthickness=0)
+        self.scrollbar = tk.Scrollbar(self.root, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg=self.bg_main)
+        
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw", width=self.root.winfo_screenwidth())
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
 
     def setup_generator_ui(self):
-        tk.Label(self.scrollable_frame, text="SECTION 1: COMBINATORIAL GENERATOR", 
-                 font=("Segoe UI Bold", 10), bg=self.bg_dark, fg="#bac2de").pack(pady=(30, 10))
+        tk.Label(self.scrollable_frame, text="STEP 1: INPUT NAMES FOR COMBINATIONS", 
+                 font=("Segoe UI Bold", 10), bg=self.bg_main, fg="#7f8c8d").pack(pady=(30, 5))
 
-        grid_container = tk.Frame(self.scrollable_frame, bg=self.bg_dark)
-        grid_container.pack(pady=10)
-
+        # ENTRY BOXES WITH LIGHT THEME
         self.name_entries = []
         for i in range(5):
-            ne = tk.Entry(grid_container, width=50, font=("Segoe UI", 12), bd=0, 
-                          bg=self.accent_dark, fg=self.fg_light, insertbackground="white",
-                          highlightthickness=1, highlightbackground=self.border_col, justify="center")
-            ne.pack(pady=6, ipady=10)
-            self.name_entries.append(ne)
+            entry = tk.Entry(self.scrollable_frame, width=50, font=("Segoe UI", 12), bd=0, 
+                             bg=self.bg_card, fg=self.fg_text, insertbackground="black",
+                             highlightthickness=1, highlightbackground=self.border_col, justify="center")
+            entry.pack(pady=4, ipady=8)
+            self.name_entries.append(entry)
 
-        tk.Button(self.scrollable_frame, text="📂 GENERATE RANDOMIZED TEXT FILE", command=self.generate_file,
-                  bg="#317air", fg="white", activebackground="#89b4fa", font=("Segoe UI Bold", 11), 
-                  padx=40, pady=12, bd=0, cursor="hand2").pack(pady=25)
+        self.progress = ttk.Progressbar(self.scrollable_frame, mode='indeterminate', length=300)
+        self.progress.pack(pady=10)
+
+        tk.Button(self.scrollable_frame, text="📂 GENERATE & RANDOMIZE LEADS", command=self.start_gen_thread,
+                  bg=self.blue, fg="white", font=("Segoe UI Bold", 11), padx=40, pady=10, bd=0, cursor="hand2").pack(pady=10)
 
     def setup_auditor_ui(self):
-        tk.Label(self.scrollable_frame, text="SECTION 2: DATA ANALYZER (REGEX)", 
-                 font=("Segoe UI Bold", 10), bg=self.bg_dark, fg="#bac2de").pack(pady=(40, 10))
+        tk.Label(self.scrollable_frame, text="STEP 2: DATA ANALYSIS (REGEX ENGINE)", 
+                 font=("Segoe UI Bold", 10), bg=self.bg_main, fg="#7f8c8d").pack(pady=(30, 5))
 
-        preview_frame = tk.Frame(self.scrollable_frame, bg=self.bg_dark)
-        preview_frame.pack(fill="x", padx=150)
+        # TEXT BOX (PLACEHOLDERS)
+        self.text_display = tk.Text(self.scrollable_frame, height=10, width=80, font=('Consolas', 11), 
+                                    bg=self.bg_card, fg="#2d3436", bd=0, padx=20, pady=20, 
+                                    highlightthickness=1, highlightbackground=self.border_col)
+        self.text_display.pack(pady=10)
+        self.text_display.insert("1.0", "Paste leads here or generate above...")
 
-        self.text_display = tk.Text(preview_frame, height=12, font=('Consolas', 11), 
-                                    bg=self.accent_dark, fg="#a6e3a1", bd=0, padx=20, pady=20, 
-                                    insertbackground="white", highlightthickness=1, highlightbackground=self.border_col)
-        self.text_display.pack(fill="x")
+        # BUTTONS
+        btn_frame = tk.Frame(self.scrollable_frame, bg=self.bg_main)
+        btn_frame.pack(pady=10)
 
-        self.btn_analyze = tk.Button(self.scrollable_frame, text="🚀 RUN REGEX ANALYSIS", command=self.analyze_emails, 
-                                     bg="#a6e3a1", fg="#11111b", activebackground="#94e2d5", 
-                                     font=("Segoe UI Bold", 12), padx=70, pady=15, bd=0, cursor="hand2")
-        self.btn_analyze.pack(pady=25)
+        tk.Button(btn_frame, text="🚀 RUN REGEX ANALYSIS", command=self.analyze_emails, 
+                  bg=self.green, fg="white", font=("Segoe UI Bold", 11), padx=30, pady=10, bd=0, cursor="hand2").pack(side="left", padx=10)
+        
+        tk.Button(btn_frame, text="📋 COPY TO CLIPBOARD", command=self.copy_to_clipboard, 
+                  bg="#e67e22", fg="white", font=("Segoe UI Bold", 11), padx=30, pady=10, bd=0, cursor="hand2").pack(side="left", padx=10)
 
-        self.res_label = tk.Label(self.scrollable_frame, text="Waiting for analysis...", justify="center", 
-                                  font=('Segoe UI Semilight', 13), bg=self.bg_dark, fg=self.fg_light)
-        self.res_label.pack(pady=(0, 100))
+        self.res_label = tk.Label(self.scrollable_frame, text="Awaiting Data...", 
+                                  font=('Segoe UI Semilight', 13), bg=self.bg_main, fg=self.fg_text)
+        self.res_label.pack(pady=(10, 50))
+
+    def start_gen_thread(self):
+        self.progress.start(10)
+        threading.Thread(target=self.generate_file, daemon=True).start()
 
     def generate_file(self):
         all_words = []
         for n in self.name_entries:
             val = n.get().strip()
-            if val:
-                all_words.extend(val.split())
+            if val: all_words.extend(val.split())
 
         if len(all_words) < 2:
-            messagebox.showwarning("Input Error", "Enter more names.")
+            self.root.after(0, lambda: [self.progress.stop(), messagebox.showwarning("Error", "Need more names!")])
             return
 
+        time.sleep(0.5) 
         domains = ["gmail.com", "outlook.com", "mseuf.edu.ph", "techcorp.io"]
-        data_lines = []
         name_combinations = list(itertools.permutations(all_words, 2))
+        
+        data = [f"Lead ID {random.randint(100, 999)}: {p[0]} {p[1]} ({p[0].lower()}.{p[1].lower()}@{random.choice(domains)})" 
+                for p in name_combinations]
 
-        for pair in name_combinations:
-            user_handle = f"{pair[0].lower()}.{pair[1].lower()}"
-            domain = random.choice(domains) 
-            lead_id = random.randint(100, 999)
-            data_lines.append(f"Lead ID {lead_id}: {pair[0]} {pair[1]} ({user_handle}@{domain})")
+        self.root.after(0, self.finish_generation, data)
 
-        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
-        if file_path:
-            with open(file_path, 'w') as f:
-                f.write("\n".join(data_lines))
-            
-            self.text_display.delete(1.0, tk.END)
-            self.text_display.insert(tk.END, "\n".join(data_lines))
+    def finish_generation(self, data):
+        self.progress.stop()
+        self.text_display.delete("1.0", tk.END)
+        self.text_display.insert(tk.END, "\n".join(data))
+        messagebox.showinfo("Success", f"Generated {len(data)} unique combinations.")
+
+    def copy_to_clipboard(self):
+        content = self.text_display.get("1.0", tk.END).strip()
+        self.root.clipboard_clear()
+        self.root.clipboard_append(content)
+        messagebox.showinfo("Clipboard", "Data copied successfully!")
 
     def analyze_emails(self):
-        content = self.text_display.get(1.0, tk.END).strip()
-        if not content:
-            return
-            
-        lead_ids = re.findall(r"Lead ID \d+", content)
+        content = self.text_display.get("1.0", tk.END).strip()
         emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", content)
+        ids = re.findall(r"Lead ID \d+", content) #
 
-        if not emails:
-            return
+        if not emails: return
 
-        total_ids = len(lead_ids) #
-        domains_found = [email.split('@')[1] for email in emails]
-        counts = Counter(domains_found)
-        most_common_domain, max_freq = counts.most_common(1)[0]
+        counts = Counter([e.split('@')[1] for e in emails])
+        top_domain, freq = counts.most_common(1)[0]
         
-        domain_name = most_common_domain.split('.')[0].title()
-        if most_common_domain == "mseuf.edu.ph":
-            target_status = "MSEUF (Academic List)"
-        else:
-            target_status = f"{domain_name} (General Market List)" #
-
-        usernames = [email.split('@')[0] for email in emails]
-        avg_len = sum(len(u) for u in usernames) / len(usernames)
-        shortest_domain = min(domains_found, key=len)
+        # CLASSIFICATION LOGIC
+        status = "MSEUF (Academic List)" if top_domain == "mseuf.edu.ph" else f"{top_domain.split('.')[0].title()} (General Market List)"
 
         report = (
-            f"📊 TOTAL LEAD ID COUNTER: {total_ids}\n"
-            f"🏢 TOP DOMAIN (MAX):      {most_common_domain} ({max_freq} hits)\n"
-            f"📏 AVG USERNAME LENGTH:  {avg_len:.1f} characters\n"
-            f"🎯 LEAD CLASSIFICATION:  {target_status}\n"
-            f"🔍 SHORTEST DOMAIN (MIN): {shortest_domain}"
+            f"📊 TOTAL LEAD ID COUNTER: {len(ids)}\n"
+            f"🏢 TOP DOMAIN: {top_domain} ({freq} hits)\n"
+            f"🎯 LEAD CLASSIFICATION: {status}"
         )
         self.res_label.config(text=report)
 
