@@ -5,26 +5,32 @@ from collections import Counter
 import random
 import itertools
 
-class IntelligenceSuite:
+class LeadApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Unified Lead Generation & Intelligence Suite")
+        self.root.title("Text File Generator & Data Analyzer")
         self.root.state('zoomed') 
-        self.root.configure(bg="#f0f2f5")
+        # DARK MODE COLORS
+        self.bg_dark = "#1e1e2e"      # Deep Navy/Charcoal
+        self.fg_light = "#cdd6f4"     # Soft White
+        self.accent_dark = "#181825"  # Darker contrast
+        self.border_col = "#45475a"   # Muted slate border
+        
+        self.root.configure(bg=self.bg_dark)
 
         # --- SHARED HEADER ---
-        header = tk.Frame(root, bg="#2c3e50", pady=20)
+        header = tk.Frame(root, bg="#11111b", pady=25)
         header.pack(fill="x")
-        tk.Label(header, text="Text File Generator & Data Analyzer", 
-                 font=('Segoe UI Bold', 20), bg="#2c3e50", fg="white").pack()
+        tk.Label(header, text="TEXT FILE GENERATOR & DATA ANALYZER", 
+                 font=('Segoe UI Bold', 22), bg="#11111b", fg="#89b4fa").pack()
 
         # --- SCROLLABLE CONTAINER ---
-        self.main_container = tk.Frame(root, bg="#f0f2f5")
+        self.main_container = tk.Frame(root, bg=self.bg_dark)
         self.main_container.pack(fill="both", expand=True)
 
-        self.canvas = tk.Canvas(self.main_container, bg="#f0f2f5", highlightthickness=0)
+        self.canvas = tk.Canvas(self.main_container, bg=self.bg_dark, highlightthickness=0)
         self.scrollbar = tk.Scrollbar(self.main_container, orient="vertical", command=self.canvas.yview)
-        self.scrollable_frame = tk.Frame(self.canvas, bg="#f0f2f5")
+        self.scrollable_frame = tk.Frame(self.canvas, bg=self.bg_dark)
 
         self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
@@ -43,39 +49,43 @@ class IntelligenceSuite:
         self.canvas.itemconfig(self.canvas_window, width=event.width)
 
     def setup_generator_ui(self):
-        tk.Label(self.scrollable_frame, text="SECTION 1: Email Data Text File Generator ", 
-                 font=("Segoe UI Bold", 10), bg="#f0f2f5", fg="#7f8c8d").pack(pady=(30, 10))
+        tk.Label(self.scrollable_frame, text="SECTION 1: COMBINATORIAL GENERATOR", 
+                 font=("Segoe UI Bold", 10), bg=self.bg_dark, fg="#bac2de").pack(pady=(30, 10))
 
-        grid_container = tk.Frame(self.scrollable_frame, bg="#f0f2f5")
+        grid_container = tk.Frame(self.scrollable_frame, bg=self.bg_dark)
         grid_container.pack(pady=10)
 
         self.name_entries = []
         for i in range(5):
-            ne = tk.Entry(grid_container, width=50, font=("Segoe UI", 11), bd=0, 
-                          highlightthickness=1, highlightbackground="#dcdde1", justify="center")
-            ne.pack(pady=5, ipady=8)
+            ne = tk.Entry(grid_container, width=50, font=("Segoe UI", 12), bd=0, 
+                          bg=self.accent_dark, fg=self.fg_light, insertbackground="white",
+                          highlightthickness=1, highlightbackground=self.border_col, justify="center")
+            ne.pack(pady=6, ipady=10)
             self.name_entries.append(ne)
 
-        tk.Button(self.scrollable_frame, text="📂 GENERATE RANDOMIZED COMBINATIONS.TXT", command=self.generate_file,
-                  bg="#3498db", fg="white", font=("Segoe UI Bold", 10), padx=40, pady=12, bd=0).pack(pady=25)
+        tk.Button(self.scrollable_frame, text="📂 GENERATE RANDOMIZED TEXT FILE", command=self.generate_file,
+                  bg="#317air", fg="white", activebackground="#89b4fa", font=("Segoe UI Bold", 11), 
+                  padx=40, pady=12, bd=0, cursor="hand2").pack(pady=25)
 
     def setup_auditor_ui(self):
-        tk.Label(self.scrollable_frame, text="SECTION 2: Data Analysis", 
-                 font=("Segoe UI Bold", 10), bg="#f0f2f5", fg="#7f8c8d").pack(pady=(40, 10))
+        tk.Label(self.scrollable_frame, text="SECTION 2: DATA ANALYZER (REGEX)", 
+                 font=("Segoe UI Bold", 10), bg=self.bg_dark, fg="#bac2de").pack(pady=(40, 10))
 
-        preview_frame = tk.Frame(self.scrollable_frame, bg="#f0f2f5")
+        preview_frame = tk.Frame(self.scrollable_frame, bg=self.bg_dark)
         preview_frame.pack(fill="x", padx=150)
 
-        self.text_display = tk.Text(preview_frame, height=12, font=('Consolas', 10), 
-                                    bd=0, padx=15, pady=15, highlightthickness=1, highlightbackground="#dcdde1")
+        self.text_display = tk.Text(preview_frame, height=12, font=('Consolas', 11), 
+                                    bg=self.accent_dark, fg="#a6e3a1", bd=0, padx=20, pady=20, 
+                                    insertbackground="white", highlightthickness=1, highlightbackground=self.border_col)
         self.text_display.pack(fill="x")
 
         self.btn_analyze = tk.Button(self.scrollable_frame, text="🚀 RUN REGEX ANALYSIS", command=self.analyze_emails, 
-                                     bg="#2ecc71", fg="white", font=("Segoe UI Bold", 11), padx=60, pady=15, bd=0)
+                                     bg="#a6e3a1", fg="#11111b", activebackground="#94e2d5", 
+                                     font=("Segoe UI Bold", 12), padx=70, pady=15, bd=0, cursor="hand2")
         self.btn_analyze.pack(pady=25)
 
         self.res_label = tk.Label(self.scrollable_frame, text="Waiting for analysis...", justify="center", 
-                                  font=('Segoe UI Semilight', 11), bg="#f0f2f5", fg="#2c3e50")
+                                  font=('Segoe UI Semilight', 13), bg=self.bg_dark, fg=self.fg_light)
         self.res_label.pack(pady=(0, 100))
 
     def generate_file(self):
@@ -91,7 +101,6 @@ class IntelligenceSuite:
 
         domains = ["gmail.com", "outlook.com", "mseuf.edu.ph", "techcorp.io"]
         data_lines = []
-        
         name_combinations = list(itertools.permutations(all_words, 2))
 
         for pair in name_combinations:
@@ -119,18 +128,16 @@ class IntelligenceSuite:
         if not emails:
             return
 
-        total_ids = len(lead_ids)
+        total_ids = len(lead_ids) #
         domains_found = [email.split('@')[1] for email in emails]
-        
         counts = Counter(domains_found)
         most_common_domain, max_freq = counts.most_common(1)[0]
         
-        # --- UPDATED CLASSIFICATION FORMAT ---
         domain_name = most_common_domain.split('.')[0].title()
         if most_common_domain == "mseuf.edu.ph":
             target_status = "MSEUF (Academic List)"
         else:
-            target_status = f"{domain_name} (General Market List)"
+            target_status = f"{domain_name} (General Market List)" #
 
         usernames = [email.split('@')[0] for email in emails]
         avg_len = sum(len(u) for u in usernames) / len(usernames)
@@ -147,5 +154,5 @@ class IntelligenceSuite:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = IntelligenceSuite(root)
+    app = LeadApp(root)
     root.mainloop()
