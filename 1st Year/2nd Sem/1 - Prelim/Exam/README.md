@@ -1,52 +1,54 @@
-# University Library Management System
+# University Library System & Data Analyzer Suite
 
-## **Program Description**
-This program is a professional **University Library Management System** designed for Enverga University to streamline the tracking of book inventories and records. The system features a modern, user-friendly graphical interface built with Python’s Tkinter library, allowing administrators to manage a collection of titles with specific attributes including Book Title, Author Name, and ISBN Code. The application implements a comprehensive **Object-Oriented Architecture** using composition, where a central `Library` class manages a collection of `Book` objects. Each `Book` object encapsulates its own data and availability status, while the `Library` class handles high-level operations such as adding new records and toggling the checkout status of items.
-
-
+A comprehensive Python desktop application suite developed for **Enverga University**. This project demonstrates advanced implementation of **Object-Oriented Programming (OOP)** and **Regular Expressions (RegEx)** to solve practical administrative and data-driven tasks.
 
 ---
 
-## **How it Works (Operational Logic)**
-The program operates by separating data management from the visual interface, following a structure similar to the Model-View-Controller (MVC) pattern.
+## 📚 Module 1: University Library System
 
-### **A. Data Modeling (The `Book` Class)**
-The `Book` class serves as the blueprint for every book in the system, utilizing **Encapsulation** to protect data.
-* **Attributes**: It stores `_title`, `_author`, and `_isbn` as protected attributes to prevent unauthorized direct access.
-* **Methods**: It uses getter methods like `get_title()` and `get_isbn()` to retrieve information and setter methods like `set_available()` to modify the book's state.
+### Description
+A professional management portal designed to streamline the tracking of book inventories and records. Built with Python's **Tkinter** library, it features a modern interface that allows administrators to manage titles, authors, and ISBN codes with ease.
 
-### **B. Logic Management (The `Library` Class)**
-The `Library` class acts as the internal database and logic controller.
-* **Composition**: It maintains a list called `_books` that stores instances of `Book` objects.
-* **Operations**: It includes logic to `add_book()` to the collection and a `toggle_status()` function that searches for a book by its unique ISBN to update its availability.
+### Key Features
+* **Inventory Management**: Add new book records including Title, Author, and ISBN.
+* **Real-time Availability Tracking**: Toggle status between "Available" (green indicator) and "Checked Out" (red indicator).
+* **Live Filtering**: Instant database search functionality based on ISBN codes.
+* **Database Control**: Features a "Wipe Database" option for total management resets.
 
-### **C. User Interface (The `LibraryGUI` Class)**
-The GUI layer handles user interaction and visualizes the library data using the Tkinter library.
-* **Event Handling**: When a user clicks "ADD TO COLLECTION," the GUI triggers a method that pulls text from the input fields and sends it to the `Library` controller.
-* **Dynamic View**: The `refresh_list()` function clears the current table and repopulates it with the latest data, applying color-coded tags for "Available" (green) or "Checked Out" (red) status.
-
-
+### Technical Architecture (OOP)
+The system is built on a clean architecture using three primary classes:
+* **`Book` Class**: Encapsulates individual book data and availability using protected attributes and getter/setter methods.
+* **`Library` Class**: The backend engine that manages a collection of `Book` objects through **composition**.
+* **`LibraryGUI` Class**: The presentation layer that handles the window lifecycle, styles, and user interactions.
 
 ---
 
-## **Key Features**
-* **Encapsulated Data**: All book attributes are protected, ensuring data integrity through controlled access methods.
-* **Real-time Search**: A "Filter by ISBN" feature allows users to search through the database instantly as they type.
-* **Interactive Table**: A styled `Treeview` provides alternating row colors and distinct status indicators for better scannability.
-* **Scrollable Layout**: A canvas-based scrolling system ensures the interface remains usable even as the library collection grows.
+## 🔍 Module 2: Text File Generator & Data Analyzer
+
+### Description
+A high-performance desktop utility designed for automated lead generation and data processing. It uses combinatorial logic to synthesize datasets and Regular Expressions to audit them within a professional Tkinter interface.
+
+### Key Features
+* **Lead Generation**: Synthesizes unique lead identifiers and emails from user-provided names using `itertools.permutations`.
+* **Multi-threaded Engine**: Offloads heavy generation tasks to a background thread to prevent UI freezing.
+* **RegEx Analysis Engine**: Scrapes the dataset in real-time to calculate lead counts and identify dominant domains.
+* **Smart Classification**: Automatically labels lists as "Academic" (e.g., `mseuf.edu.ph`) or "General Market" based on frequency analysis.
+
+### Libraries Used
+* `re`: Regular Expression matching for data scraping.
+* `itertools`: Combinatorial mathematics for lead generation.
+* `threading`: Asynchronous background processing.
+* `collections.Counter`: Frequency analysis for domain classification.
 
 ---
 
-## **Areas for Improvement**
-While the current version of the University Library System is fully functional, there are several technical enhancements that could further professionalize the application:
-* **Data Persistence**: Currently, any new books added are stored only in volatile memory and are lost once the program is closed. Integrating a local SQLite database would allow the system to save and reload the collection across different sessions.
-* **Input Validation**: Enhancing the `add_book` method to ensure that ISBN codes follow a specific numerical format and to prevent duplicate entries from being added to the database.
+## 🚀 Installation & Usage
+1. **Requirements**: Ensure Python 3.x is installed. 
+2. **Run Library System**: Execute the script to manage books via the "Add New Record" card and the interactive table.
+3. **Run Data Analyzer**: Enter names into the generator fields, click **"Generate & Randomize Leads"**, and use **"Run RegEx Analysis"** to view statistical reports.
 
 ---
 
-## **Technical Reflection**
-Developing this system provided a valuable opportunity to apply theoretical **Object-Oriented Programming (OOP)** concepts to a practical scenario. By structuring the program into distinct `Book`, `Library`, and `LibraryGUI` classes, the project demonstrates how **Composition** allows complex systems to be built from simpler, reusable components. Implementing **Encapsulation** was particularly insightful, as using protected attributes and getter/setter methods demonstrated how to protect internal data while still providing a controlled interface for the GUI. Overall, this project highlights the importance of a "Separation of Concerns" architecture.
-
----
-**Author:** Sano
-**Course:** CP102
+## 👤 Author
+* **Allen Jerrome M. Tolete**
+* **Course**: CP102-M001
