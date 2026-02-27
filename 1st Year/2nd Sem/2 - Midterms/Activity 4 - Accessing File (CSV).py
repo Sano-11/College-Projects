@@ -1,6 +1,10 @@
-import csv
+import csv, os
  
-filename = "census.csv"
+# Get the directory where the script is located
+script_dir = os.path.dirname(__file__) 
+
+# Combine that directory with the filename
+filename = os.path.join(script_dir, "census.csv")
 
 # Dictionary
 city_counts = {}              # {state: number_of_cities}
@@ -72,7 +76,7 @@ for state, (city, pop) in lowest_city.items():
     print(f"- {state}: {city} ({pop})")
  
 # Export
-output_file = "US2010Census.csv"
+output_file = os.path.join(script_dir, "US2010Census.csv")
 with open(output_file, mode='w', newline='', encoding='utf-8') as file:
     writer = csv.writer(file)
     writer.writerow(["State", "Total Cities", "Total 2010 Population\n"])
