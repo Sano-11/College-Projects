@@ -14,8 +14,6 @@ The archive is organized by academic year, with subdirectories for specific seme
 1.  Navigate to the specific **Year** folder.
 2.  Review the `README.md` within each project folder for specific installation instructions and dependencies.
 3.  Make sure you have the proper libraries
-    ```bash
-    python final.py
-    ```
+    
 ---
 **Author:** Allen Jerrome M. Tolete
