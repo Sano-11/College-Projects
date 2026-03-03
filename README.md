@@ -6,7 +6,7 @@ This repository serves as a comprehensive digital archive of my academic journey
 
 ## 📂 Repository Structure
 
-The archive is organized by academic year, with subdirectories for specific semesters and courses:
+The archive is organized by academic year, with subdirectories for specific semesters and activities and projects within those semesters:
 
 
 ## 🚀 How to Use This Repo
