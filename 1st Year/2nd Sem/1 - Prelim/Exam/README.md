@@ -7,7 +7,7 @@ A comprehensive Python desktop application suite developed for **Enverga Univers
 ## 📚 Module 1: University Library System
 
 ### Description
-A professional management portal designed to streamline the tracking of book inventories and records. Built with Python's **Tkinter** library, it features a modern interface that allows administrators to manage titles, authors, and ISBN codes with ease.
+A professional management portal designed to streamline the tracking of book inventories and records of MSEUF Library. Built with Python's **Tkinter** library, it features a modern interface that allows administrators to manage titles, authors, and ISBN codes with ease.
 
 ### Key Features
 * **Inventory Management**: Add new book records including Title, Author, and ISBN.
