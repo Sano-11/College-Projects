@@ -1,11 +1,11 @@
 import csv, os
  
-# Get the directory where the script is located
+# Get the directory 
 script_dir = os.path.dirname(__file__) 
 
 # Combine that directory with the filename
 filename = os.path.join(script_dir, "census.csv")
-
+ 
 # Dictionary
 city_counts = {}              # {state: number_of_cities}
 state_pop = {}         # {state: total_state_population}
