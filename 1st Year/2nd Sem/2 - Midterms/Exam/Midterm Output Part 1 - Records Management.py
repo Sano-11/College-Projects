@@ -1,12 +1,3 @@
-# Activity 4 - Accessing File (CSV) with GUI
-# Student: Allen
-# Course: BS Computer Science
-# School: MSEUF Lucena
-#
-# Description:
-#   Part I  - CSV Record Management System with Tkinter UI
-#   Part II - Data Analysis and Visualization using pandas and matplotlib
-
 import os
 import csv
 import tkinter as tk
