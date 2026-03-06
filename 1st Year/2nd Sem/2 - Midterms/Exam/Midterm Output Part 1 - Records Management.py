@@ -17,9 +17,11 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 DATASET_FILE = os.path.join(script_dir, "ai_job_replacement_2020_2026_v2.csv")
 RECORDS_FILE = os.path.join(script_dir, "custom_records.csv")
 
+
 # --------------------------------------------------
-# Colors and Fonts (MSEUF theme: Maroon, White, Yellow)
+# Colors and Fonts (MSEUF theme)
 # --------------------------------------------------
+
 MAROON  = "#7B0D1E"
 MAROON2 = "#5C0A16"
 YELLOW  = "#F5C518"
