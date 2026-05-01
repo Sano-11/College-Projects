@@ -1,75 +1,118 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog, ttk
 import math
+import csv
 
-class SecureCommApp:
+class SecureCommMSEUF:
     def __init__(self, root):
         self.root = root
-        self.root.title("SecureComm")
-        self.root.geometry("500x600")
-        self.root.configure(bg="#F5F5F7")  # Apple Off-White background
+        self.root.title("SecureComm Pro - Discrete Structures")
+        self.root.geometry("1280x820")
+        self.root.configure(bg="#F1F5F9") # Neutral background to make white cards "pop"
 
-        # --- Header Section ---
-        tk.Label(root, text="SecureComm", font=("Helvetica Neue", 28, "bold"), 
-                 bg="#F5F5F7", fg="#1D1D1F").pack(pady=(40, 5))
-        tk.Label(root, text="Discrete Structures: Bijective Encryption", font=("Helvetica Neue", 11), 
-                 bg="#F5F5F7", fg="#86868B").pack(pady=(0, 30))
+        # --- MSEUF Identity Palette ---
+        self.colors = {
+            "maroon": "#7B1113",     
+            "gold": "#FFC107",       
+            "bg": "#F1F5F9",         # Light slate background
+            "card": "#FFFFFF",       # High-contrast white for cards
+            "border": "#E2E8F0",     # Subtle gray for card edges
+            "text_main": "#1E293B",
+            "text_muted": "#64748B",
+            "white": "#FFFFFF"
+        }
 
-        # --- Input Field ---
-        self.create_label("Enter Secret Ballot")
-        self.msg_entry = tk.Entry(root, width=30, font=("Helvetica Neue", 14), 
-                                  bg="#FFFFFF", fg="#1D1D1F", relief="flat", 
-                                  highlightthickness=1, highlightbackground="#D2D2D7",
-                                  insertbackground="#007AFF")
-        self.msg_entry.pack(pady=10, ipady=8)
+        # --- 1. Global Header (Stays Flat) ---
+        self.header = tk.Frame(root, bg=self.colors["maroon"], height=70)
+        self.header.pack(side="top", fill="x")
+        self.header.pack_propagate(False)
 
-        # --- Keys Section ---
-        keys_frame = tk.Frame(root, bg="#F5F5F7")
-        keys_frame.pack(pady=20)
+        header_inner = tk.Frame(self.header, bg=self.colors["maroon"])
+        header_inner.pack(fill="both", expand=True, padx=32)
 
-        # Key A
-        a_frame = tk.Frame(keys_frame, bg="#F5F5F7")
-        a_frame.grid(row=0, column=0, padx=15)
-        tk.Label(a_frame, text="Key 'a' (Multiplier)", font=("Helvetica Neue", 9), bg="#F5F5F7", fg="#86868B").pack()
-        self.key_a_entry = tk.Entry(a_frame, width=8, font=("Helvetica Neue", 14), bg="#FFFFFF", 
-                                    relief="flat", highlightthickness=1, highlightbackground="#D2D2D7", justify='center')
-        self.key_a_entry.insert(0, "17")
-        self.key_a_entry.pack(ipady=5)
+        tk.Label(header_inner, text="SecureComm Pro", font=("Inter", 20, "bold"), 
+                 bg=self.colors["maroon"], fg=self.colors["white"]).pack(side="left")
+        
+        user_info = tk.Frame(header_inner, bg=self.colors["maroon"])
+        user_info.pack(side="right")
+        tk.Label(user_info, text="Allen Jerrome M. Tolete |", font=("Inter", 10, "bold"), 
+                 bg=self.colors["maroon"], fg=self.colors["white"]).pack(anchor="e")
+        tk.Label(user_info, text="MSEUF Lucena | BS Computer Science", font=("Inter", 9), 
+                 bg=self.colors["maroon"], fg=self.colors["gold"]).pack(anchor="e")
 
-        # Key B
-        b_frame = tk.Frame(keys_frame, bg="#F5F5F7")
-        b_frame.grid(row=0, column=1, padx=15)
-        tk.Label(b_frame, text="Key 'b' (Shift)", font=("Helvetica Neue", 9), bg="#F5F5F7", fg="#86868B").pack()
-        self.key_b_entry = tk.Entry(b_frame, width=8, font=("Helvetica Neue", 14), bg="#FFFFFF", 
-                                    relief="flat", highlightthickness=1, highlightbackground="#D2D2D7", justify='center')
-        self.key_b_entry.insert(0, "20")
-        self.key_b_entry.pack(ipady=5)
+        # --- Main Workspace (The "Floor") ---
+        self.workspace = tk.Frame(root, bg=self.colors["bg"])
+        self.workspace.pack(expand=True, fill="both", padx=32, pady=32)
 
-        # --- Status Indicator ---
-        self.status_label = tk.Label(root, text="Ready to Validate", 
-                                     font=("Helvetica Neue", 10, "bold"), bg="#F5F5F7", fg="#86868B")
-        self.status_label.pack(pady=10)
+        # --- 2. Sidebar Card ---
+        # highlightthickness=1 + border color creates the "card" effect
+        self.sidebar = tk.Frame(self.workspace, bg=self.colors["card"], width=320, 
+                                highlightthickness=1, highlightbackground=self.colors["border"])
+        self.sidebar.pack(side="left", fill="y", padx=(0, 24))
+        self.sidebar.pack_propagate(False)
 
-        # --- Action Button (Apple Blue) ---
-        self.btn = tk.Button(root, text="Validate & Encrypt", command=self.process_encryption, 
-                             bg="#007AFF", fg="white", font=("Helvetica Neue", 12, "bold"), 
-                             relief="flat", activebackground="#005BB7", activeforeground="white",
-                             cursor="hand2", width=20)
-        self.btn.pack(pady=10, ipady=10)
+        tk.Label(self.sidebar, text="Configuration", font=("Inter", 12, "bold"), 
+                 bg=self.colors["card"], fg=self.colors["maroon"]).pack(anchor="w", padx=24, pady=(24, 16))
 
-        # --- Output Area ---
-        self.create_label("Encrypted Ciphertext")
-        self.result_box = tk.Text(root, height=3, width=32, font=("Helvetica Neue", 14), 
-                                  bg="#E8E8ED", fg="#1D1D1F", relief="flat", state='disabled', padx=15, pady=15)
-        self.result_box.pack(pady=10)
+        self.add_input("Affine Multiplier (a)", "17", "key_a")
+        self.add_input("Affine Shift (b)", "20", "key_b")
 
-        # --- Footer ---
-        tk.Label(root, text="Final Exam Submission | Allen Jerrome M. Tolete", 
-                 font=("Helvetica Neue", 9), bg="#F5F5F7", fg="#A1A1A6").pack(side="bottom", pady=20)
+        # Buttons nested inside the sidebar card
+        self.btn_import = tk.Button(self.sidebar, text="Import CSV Dataset", command=self.import_csv, 
+                                    bg=self.colors["maroon"], fg="white", font=("Inter", 10, "bold"), 
+                                    relief="flat", cursor="hand2")
+        self.btn_import.pack(fill="x", padx=24, pady=(24, 8), ipady=12)
 
-    def create_label(self, text):
-        tk.Label(self.root, text=text, bg="#F5F5F7", fg="#1D1D1F", font=("Helvetica Neue", 11, "bold")).pack()
+        self.btn_export = tk.Button(self.sidebar, text="Export Secure Ballots", command=self.export_csv, 
+                                    bg=self.colors["gold"], fg=self.colors["maroon"], font=("Inter", 10, "bold"), 
+                                    relief="flat", cursor="hand2")
+        self.btn_export.pack(fill="x", padx=24, pady=8, ipady=12)
 
+        # --- 3. Main Content Card ---
+        self.content_card = tk.Frame(self.workspace, bg=self.colors["card"], 
+                                     highlightthickness=1, highlightbackground=self.colors["border"])
+        self.content_card.pack(side="right", expand=True, fill="both")
+
+        # --- 4. Inner Header Card (The Maroon Strip) ---
+        self.content_header = tk.Frame(self.content_card, bg=self.colors["maroon"], height=55)
+        self.content_header.pack(fill="x")
+        self.content_header.pack_propagate(False)
+        
+        tk.Label(self.content_header, text="Data Transmission Record", font=("Inter", 11, "bold"), 
+                 bg=self.colors["maroon"], fg=self.colors["white"]).pack(side="left", padx=24)
+        
+        self.status_msg = tk.Label(self.content_header, text="Dataset: 0 records loaded", font=("Inter", 9), 
+                                   bg=self.colors["maroon"], fg=self.colors["gold"])
+        self.status_msg.pack(side="right", padx=24)
+
+        # --- 5. Structured Table Container ---
+        self.table_frame = tk.Frame(self.content_card, bg=self.colors["card"])
+        self.table_frame.pack(expand=True, fill="both", padx=24, pady=24)
+
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Treeview", font=("Inter", 10), rowheight=40, fieldbackground="white", borderwidth=0)
+        style.configure("Treeview.Heading", font=("Inter", 9, "bold"), background="#F8FAFC", foreground=self.colors["maroon"], relief="flat")
+        
+        self.tree = ttk.Treeview(self.table_frame, columns=("Original", "Encrypted"), show="headings")
+        self.tree.heading("Original", text="   ORIGINAL DOMAIN DATA")
+        self.tree.heading("Encrypted", text="   ENCRYPTED CODOMAIN (SECURE)")
+        self.tree.column("Original", width=400, anchor="w")
+        self.tree.column("Encrypted", width=400, anchor="w")
+        
+        self.tree.pack(expand=True, fill="both")
+
+    def add_input(self, label, default, var_name):
+        f = tk.Frame(self.sidebar, bg=self.colors["card"])
+        f.pack(fill="x", padx=24, pady=8)
+        tk.Label(f, text=label, font=("Inter", 9, "bold"), bg=self.colors["card"], fg=self.colors["text_muted"]).pack(anchor="w", pady=(0, 4))
+        e = tk.Entry(f, font=("Inter", 11), bg="#F8FAFC", relief="flat", 
+                     highlightthickness=1, highlightbackground=self.colors["border"], fg=self.colors["maroon"])
+        e.insert(0, default)
+        e.pack(fill="x", ipady=10)
+        setattr(self, var_name, e)
+
+    # ... (Encryption, Import, and Export methods remain the same)
     def affine_encrypt(self, text, a, b):
         res = ""
         for char in text.upper():
@@ -80,30 +123,39 @@ class SecureCommApp:
                 res += char
         return res
 
-    def process_encryption(self):
+    def import_csv(self):
         try:
-            a = int(self.key_a_entry.get())
-            b = int(self.key_b_entry.get())
-            msg = self.msg_entry.get()
+            a, b = int(self.key_a.get()), int(self.key_b.get())
+            if math.gcd(a, 26) != 1:
+                messagebox.showerror("Discrete Math Warning", "Multiplier 'a' must be coprime to 26.")
+                return
+            path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+            if not path: return
+            for i in self.tree.get_children(): self.tree.delete(i)
+            with open(path, mode='r') as f:
+                reader = csv.reader(f)
+                count = 0
+                for row in reader:
+                    if row:
+                        orig = row[0]
+                        enc = self.affine_encrypt(orig, a, b)
+                        self.tree.insert("", "end", values=(f"  {orig}", f"  {enc}"))
+                        count += 1
+            self.status_msg.config(text=f"Dataset: {count} records loaded")
+        except:
+            messagebox.showerror("Error", "Check your keys or file format.")
 
-            if not msg: return
-
-            if math.gcd(a, 26) == 1:
-                self.status_label.config(text="BIJECTION VALIDATED", fg="#34C759") # Apple Green
-                self.display_result(self.affine_encrypt(msg, a, b))
-            else:
-                self.status_label.config(text="NOT BIJECTIVE", fg="#FF3B30") # Apple Red
-                messagebox.showerror("Math Error", "Key 'a' and 26 must be coprime.")
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid integers.")
-
-    def display_result(self, text):
-        self.result_box.config(state='normal')
-        self.result_box.delete(1.0, tk.END)
-        self.result_box.insert(tk.END, text)
-        self.result_box.config(state='disabled')
+    def export_csv(self):
+        if not self.tree.get_children(): return
+        path = filedialog.asksaveasfilename(defaultextension=".csv")
+        if not path: return
+        with open(path, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            for i in self.tree.get_children():
+                writer.writerow([v.strip() for v in self.tree.item(i)['values']])
+        messagebox.showinfo("Success", "Security export complete.")
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = SecureCommApp(root)
+    app = SecureCommMSEUF(root)
     root.mainloop()
