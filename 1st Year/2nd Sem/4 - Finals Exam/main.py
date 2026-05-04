@@ -14,7 +14,7 @@ class MainApp(ctk.CTk):
         
         # Theme & Styling Constants
         self.primary_green = "#276C4C"
-        self.bg_gray = "#F2F2F7" 
+        self.bg_gray = "#EEEEEE"
         self.border_gray = "#D1D1D6"
         self.tax_rate = 0.12 
         self.b_width = 3 # Global Border Width requirement
@@ -121,8 +121,8 @@ class MainApp(ctk.CTk):
         
         h = ctk.CTkFrame(self.container, fg_color="transparent")
         h.pack(fill="x", pady=(10, 25), padx=10)
-        ctk.CTkLabel(h, text="Welcome back, Admin! 👋", font=("SF Pro Text", 14), text_color="gray").pack(anchor="w")
-        ctk.CTkLabel(h, text="Menu Dashboard", font=("SF Pro Display", 38, "bold")).pack(anchor="w")
+        ctk.CTkLabel(h, text="Welcome back, Admin! 👋", font=("SF Pro Emoji", 25), text_color="gray").pack(anchor="w")
+        ctk.CTkLabel(h, text="Menu Dashboard", font=("SF Pro Display", 67, "bold")).pack(anchor="w")
         
         row_search = ctk.CTkFrame(self.container, fg_color="transparent")
         row_search.pack(fill="x", padx=10, pady=(0, 20))
