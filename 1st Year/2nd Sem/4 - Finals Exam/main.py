@@ -275,15 +275,39 @@ class MainApp(ctk.CTk):
             self.show_inventory_manager()
 
     def checkout(self):
-        if not self.cart: return messagebox.showwarning("POS", "Cart is empty!")
+        if not self.cart: 
+            return messagebox.showwarning("POS", "Cart is empty!")
+    
         try:
-            summary = ", ".join([f"{v['qty']}x {k}" for k,v in self.cart.items()])
-            total = sum([v['qty'] * v['price'] for v in self.cart.values()]) * 1.12
-            # Stock decrementing logic
+        # 1. Pre-Check: Verify all items have sufficient stock
+            items_in_db = {item[0]: item for item in self.db.fetch_menu_items()} #
+        
             for item_name, item_data in self.cart.items():
-                self.db.update_stock(item_data['id'], -item_data['qty'])
-            self.db.add_sale(datetime.now().strftime("%Y-%m-%d %H:%M"), summary, total)
-            messagebox.showinfo("POS", "Transaction Completed!"); self.cart = {}; self.render_cart(); self.show_dashboard()
+                pid = item_data['id']
+                requested_qty = item_data['qty']
+                current_stock = items_in_db[pid][3] # Index 3 is stock column
+            
+                if requested_qty > current_stock:
+                    messagebox.showerror("Stock Error", 
+                        f"Insufficient stock for {item_name}.\n"
+                        f"Requested: {requested_qty}\n"
+                        f"Available: {current_stock}")
+                    return # Stop the checkout entirely
+
+        # 2. Process Checkout (Only if stock is sufficient)
+            summary = ", ".join([f"{v['qty']}x {k}" for k,v in self.cart.items()])
+            total = sum([v['qty'] * v['price'] for v in self.cart.values()]) * 1.12 #
+        
+            for item_name, item_data in self.cart.items():
+                self.db.update_stock(item_data['id'], -item_data['qty']) #[cite: 3]
+            
+            self.db.add_sale(datetime.now().strftime("%Y-%m-%d %H:%M"), summary, total) #[cite: 3]
+        
+            messagebox.showinfo("POS", "Transaction Completed!")
+            self.cart = {}
+            self.render_cart()
+            self.show_dashboard()
+        
         except Exception as e:
             messagebox.showerror("Error", f"Checkout failed: {e}")
 
